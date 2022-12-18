@@ -19,66 +19,67 @@
  */
 session_start();
 
-
 function filtra(string $texto): array
 {
-    //conectarse con mariadb
-    $mysqli = new mysqli("db", "dwes", "dwes", "dwes", 3306);
-    if ($mysqli->errno) {
-        echo "Error al conectarse a la base de datos";
-        return [];
-    }
+    if ($_GET && isset($_GET['texto'])) {
+        //conectarse con mariadb
+        $mysqli = new mysqli("db", "dwes", "dwes", "dwes", 3306);
+        if ($mysqli->errno) {
+            echo "Error al conectarse a la base de datos";
+            return [];
+        }
 
-    //preparamos la consulta
-    $sentencia = $mysqli->prepare(
-        "select nombre, ruta from imagen i where i.nombre like ?"
-    );
-    if (!$sentencia) {
-        echo "Error: " . $mysqli->error;
-        $mysqli->close();
-        return [];
-    }
+        //preparamos la consulta
+        $sentencia = $mysqli->prepare(
+            "select nombre, ruta from imagen i where i.nombre like ?"
+        );
+        if (!$sentencia) {
+            echo "Error: " . $mysqli->error;
+            $mysqli->close();
+            return [];
+        }
 
-    //preparamos la vinculacion
-    $valor = '%' . $texto . '%';
-    $vinculacion = $sentencia->bind_param("s", $valor);
+        //preparamos la vinculacion
+        $valor = '%' . $texto . '%';
+        $vinculacion = $sentencia->bind_param("s", $valor);
 
-    if (!$vinculacion) {
-        echo "Error al vincular: " . $mysqli->error;
-        $sentencia->close();
-        $mysqli->close();
-        return [];
-    }
+        if (!$vinculacion) {
+            echo "Error al vincular: " . $mysqli->error;
+            $sentencia->close();
+            $mysqli->close();
+            return [];
+        }
 
-    //ejecutamos
-    $ejecucion = $sentencia->execute();
-    if (!$ejecucion) {
-        echo "Error al ejecutar la sentencia " . $mysqli->error;
-        $sentencia->close();
-        $mysqli->close();
-        return [];
+        //ejecutamos
+        $ejecucion = $sentencia->execute();
+        if (!$ejecucion) {
+            echo "Error al ejecutar la sentencia " . $mysqli->error;
+            $sentencia->close();
+            $mysqli->close();
+            return [];
+        }
+        //recuperamos las filas obtenidas como resultado
+        $resultado = $sentencia->get_result();
+        if (!$resultado) {
+            echo "Error al obtener los resultados. " . $mysqli->error;
+            $sentencia->close();
+            $mysqli->close();
+            return [];
+        }
+        $resultadoBusqueda = [];
+        while (($fila = $resultado->fetch_assoc()) != null) {
+            $resultadoBusqueda[] = $fila;
+        }
+        return $resultadoBusqueda;
     }
-    //recuperamos las filas obtenidas como resultado
-    $resultado = $sentencia->get_result();
-    if (!$resultado) {
-        echo "Error al obtener los resultados. " . $mysqli->error;
-        $sentencia->close();
-        $mysqli->close();
-        return [];
-    }
-    $resultadoBusqueda = [];
-    while (($fila = $resultado->fetch_assoc()) != null) {
-        $resultadoBusqueda[] = $fila;
-    }
-    return $resultadoBusqueda;
 }
 
-$posts = [];
+$imagenes = [];
 
 $stringBuscador = $_GET && isset($_GET['texto']) ? htmlspecialchars(trim($_GET['texto'])) : "";
-
+//si el texto no esta vacio:
 if (mb_strlen($stringBuscador) > 0) {
-    $posts = filtra($stringBuscador);
+    $imagenes = filtra($stringBuscador);
 }
 
 //funcion que imprime la barra de navegacion
@@ -129,8 +130,6 @@ function imprimirNav()
 <body>
     <h1>Galería de imágenes</h1>
     <?php ImprimirNav(); ?>
-
-
     <h2>Busca imágenes por filtro</h2>
 
     <form action="filter.php" method="get">
@@ -144,10 +143,10 @@ function imprimirNav()
 
     </form>
     <?php
-    foreach ($posts as $post) {
+    foreach ($imagenes as $imagen) {
         echo <<<END
-                <p>{$post['nombre']}</p>
-                <img src={$post['ruta']} width=200 height=200></img>
+                <p>{$imagen['nombre']}</p>
+                <img src={$imagen['ruta']} width=200 height=auto></img>
                 
             END;
     }
@@ -155,4 +154,3 @@ function imprimirNav()
 </body>
 
 </html>
-

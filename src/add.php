@@ -210,7 +210,7 @@ function añadirImagen()
         imprimirFormulario("", "", "");
     }
 }
-
+//funcion que imprime la barra de Navegacion
 function imprimirNav()
 {
     if (!$_SESSION) {

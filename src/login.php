@@ -27,6 +27,8 @@ session_start();
 if (isset($_SESSION['usuario'])) {
     header('location: index.php');
 }
+
+//funcion que imprime el formulario
 function imprimirFormulario($error)
 {
     echo <<<END
